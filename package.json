@@ -1,0 +1,17 @@
+{
+  "name": "region-mapper",
+  "version": "1.0.0",
+  "description": "Pokemon Go Pittsburgh gym region mapper",
+  "main": "index.js",
+  "dependencies": {
+    "d3-geo": "^1.6.4",
+    "togeojson-with-extended-style": "^0.13.1",
+    "xmldom": "^0.1.27"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "debug": "node %NODE_DEBUG_OPTION% index.js"
+  },
+  "author": "Matt Legowski",
+  "license": "Apache License 2.0"
+}
