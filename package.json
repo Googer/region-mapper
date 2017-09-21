@@ -4,7 +4,9 @@
   "description": "Pokemon Go Pittsburgh gym region mapper",
   "main": "index.js",
   "dependencies": {
-    "d3-geo": "^1.6.4",
+    "@turf/helpers": "^4.7.3",
+    "@turf/inside": "^4.7.3",
+    "@turf/transform-scale": "^4.7.3",
     "togeojson-with-extended-style": "^0.13.1",
     "xmldom": "^0.1.27"
   },
