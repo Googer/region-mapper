@@ -21,13 +21,6 @@ const mapRegions = rawRegions
   gyms = require('./gyms')
     .map(gym => [gym.gymId, turfHelpers.point([gym.gymInfo.longitude, gym.gymInfo.latitude])]);
 
-let output = '';
-require('./gyms').forEach(gym => {
-  output = output + gym.gymName + '\t' + gym.gymInfo.longitude + '\t' + gym.gymInfo.latitude + '\n';
-});
-
-fs.writeFileSync('gyms.tsv', output);
-
 gyms.forEach(gym => {
   const matchingRegions = mapRegions.filter(region => turfInside(gym[1], region[1]));
 
