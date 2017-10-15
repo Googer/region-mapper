@@ -8,7 +8,8 @@ const ToGeoJSON = require('togeojson-with-extended-style'),
 	turfScale = require('@turf/transform-scale'),
 	DOMParser = require('xmldom').DOMParser,
 	kml = new DOMParser().parseFromString(fs.readFileSync('map.kml', 'utf8')),
-	rawRegions = ToGeoJSON.kml(kml).features,
+	rawRegions = ToGeoJSON.kml(kml).features
+		.filter(feature => feature.geometry.type === 'Polygon'),
 	regionMap = Object.create(null);
 
 // flip order of coordinates so they're in the right order according to what D3 expects
@@ -18,7 +19,7 @@ rawRegions.forEach(region => {
 });
 
 const mapRegions = rawRegions
-		.map(feature => [feature.properties.name, feature.geometry]),
+		.map(region => [region.properties.name.replace(/#/, ''), region.geometry]),
 	gyms = require('./gyms')
 		.map(gym => [gym.gymId, turfHelpers.point([gym.gymInfo.longitude, gym.gymInfo.latitude])]);
 
