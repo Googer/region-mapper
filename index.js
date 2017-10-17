@@ -12,40 +12,59 @@ const ToGeoJSON = require('togeojson-with-extended-style'),
 		.filter(feature => feature.geometry.type === 'Polygon'),
 	regionMap = Object.create(null);
 
-// flip order of coordinates so they're in the right order according to what D3 expects
+// flip order of coordinates so they're in the right order according to what turf expects
 rawRegions.forEach(region => {
 	region.geometry.coordinates[0].reverse();
 //  region.geometry = turfScale(region.geometry, 1.1);
 });
 
 const mapRegions = rawRegions
-		.map(region => [region.properties.name.replace(/#/, ''), region.geometry]),
+		.map(region => Object.create({
+			name: region.properties.name.replace(/#/, ''),
+			geometry: region.geometry
+		})),
 	gyms = require('./gyms')
-		.map(gym => [gym.gymId, turfHelpers.point([gym.gymInfo.longitude, gym.gymInfo.latitude])]);
+		.map(gym => Object.create({
+			id: gym.gymId,
+			gym: gym,
+			point: turfHelpers.point([gym.gymInfo.longitude, gym.gymInfo.latitude])
+		}));
 
 gyms.forEach(gym => {
-	const matchingRegions = mapRegions.filter(region => turfInside(gym[1], region[1]));
+	const matchingRegions = mapRegions.filter(region => turfInside(gym.point, region.geometry));
 
 	let regionGyms;
 	matchingRegions.forEach(matchingRegion => {
-		regionGyms = regionMap[matchingRegion[0]];
+		regionGyms = regionMap[matchingRegion.name];
 
 		if (!regionGyms) {
 			regionGyms = [];
-			regionMap[matchingRegion[0]] = regionGyms;
+			regionMap[matchingRegion.name] = regionGyms;
 		}
 
-		regionGyms.push(gym[0]);
+		regionGyms.push(gym.id);
 	});
+});
+
+Object.entries(regionMap).forEach(([region, gymIds]) => {
+	let tsv = 'Gym Name\tLatitude\tLongitude\n';
+
+	tsv = tsv + gymIds.map(gymId => gyms.find(gym => gym.id === gymId))
+		.map(gym => gym.gym)
+		.sort((gymA, gymB) => gymA.gymName.localeCompare(gymB.gymName))
+		.map(gym => `${gym.gymName.replace(/"/g, '\'')}\t${gym.gymInfo.latitude}\t${gym.gymInfo.longitude}`)
+		.join('\n');
+
+	fs.writeFileSync(`${region}.tsv`, tsv);
 });
 
 const regionGraph = Object.create(null);
 
 mapRegions.forEach(region => {
-	regionGraph[region[0]] = mapRegions
-		.filter(otherRegion => otherRegion[0] !== region[0])
-		.filter(otherRegion => turfIntersect(region[1], otherRegion[1]) !== null)
-		.map(otherRegion => otherRegion[0]);
+	regionGraph[region.name] = mapRegions
+		.filter(otherRegion => otherRegion.name !== region.name)
+		.filter(otherRegion => turfIntersect(region.geometry, otherRegion.geometry) !== null)
+		.map(otherRegion => otherRegion.name);
 });
 
 fs.writeFileSync('region-map.json', JSON.stringify(regionMap, null, 2));
