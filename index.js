@@ -23,7 +23,7 @@ const mapRegions = rawRegions
 			name: region.properties.name.replace(/#/, ''),
 			geometry: region.geometry
 		})),
-	gyms = require('./gyms')
+	gyms = require('PgP-Data/data/gyms')
 		.map(gym => Object.create({
 			id: gym.gymId,
 			gym: gym,
