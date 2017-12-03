@@ -5,11 +5,7 @@ package-lock.json
 # ignore IDEA workspace file
 .idea/workspace.xml
 
-# ignore input files
-gyms.json
-map.kml
-
 # ignore output files
+park-gyms.json
 region-graph.json
 region-map.json
-*.tsv
