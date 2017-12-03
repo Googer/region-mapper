@@ -2,36 +2,55 @@
 
 const ToGeoJSON = require('togeojson-with-extended-style'),
 	fs = require('fs'),
-	turfHelpers = require('@turf/helpers'),
-	turfInside = require('@turf/inside'),
-	turfIntersect = require('@turf/intersect'),
-	turfScale = require('@turf/transform-scale'),
+	turf = require('@turf/turf'),
 	DOMParser = require('xmldom').DOMParser,
-	kml = new DOMParser().parseFromString(fs.readFileSync('map.kml', 'utf8')),
-	rawRegions = ToGeoJSON.kml(kml).features
+
+	map = require.resolve('PgP-Data/data/map.kml'),
+	mapKml = new DOMParser().parseFromString(fs.readFileSync(map, 'utf8')),
+	rawMapRegions = ToGeoJSON.kml(mapKml).features
 		.filter(feature => feature.geometry.type === 'Polygon'),
-	regionMap = Object.create(null);
+
+	parks = require.resolve('PgP-data/data/parks.kml'),
+	parksKml = new DOMParser().parseFromString(fs.readFileSync(parks, 'utf8')),
+	rawParkRegions = ToGeoJSON.kml(parksKml).features
+		.filter(feature => feature.geometry.type === 'Polygon'),
+
+	regionMap = Object.create(null),
+	parkGyms = [];
 
 // flip order of coordinates so they're in the right order according to what turf expects
-rawRegions.forEach(region => {
-	region.geometry.coordinates[0].reverse();
-//  region.geometry = turfScale(region.geometry, 1.1);
-});
+rawMapRegions
+	.forEach(region => region.geometry.coordinates
+		.forEach(coords => coords.reverse())
+	);
 
-const mapRegions = rawRegions
+rawParkRegions
+	.forEach(region => region.geometry.coordinates
+		.forEach(coords => coords.reverse())
+	);
+
+const mapRegions = rawMapRegions
 		.map(region => Object.create({
-			name: region.properties.name.replace(/#/, ''),
+			name: region.properties.name ?
+				region.properties.name.replace(/#/, '') :
+				'Unnamed Region',
 			geometry: region.geometry
 		})),
+	parkRegions = rawParkRegions
+		.map(region => region.geometry),
+
 	gyms = require('PgP-Data/data/gyms')
 		.map(gym => Object.create({
 			id: gym.gymId,
 			gym: gym,
-			point: turfHelpers.point([gym.gymInfo.longitude, gym.gymInfo.latitude])
+			point: turf.point([gym.gymInfo.longitude, gym.gymInfo.latitude])
 		}));
 
 gyms.forEach(gym => {
-	const matchingRegions = mapRegions.filter(region => turfInside(gym.point, region.geometry));
+	const matchingRegions = mapRegions
+			.filter(region => turf.inside(gym.point, region.geometry)),
+		inPark = parkRegions
+			.some(region => turf.inside(gym.point, region));
 
 	let regionGyms;
 	matchingRegions.forEach(matchingRegion => {
@@ -44,18 +63,10 @@ gyms.forEach(gym => {
 
 		regionGyms.push(gym.id);
 	});
-});
 
-Object.entries(regionMap).forEach(([region, gymIds]) => {
-	let tsv = 'Gym Name\tLatitude\tLongitude\n';
-
-	tsv = tsv + gymIds.map(gymId => gyms.find(gym => gym.id === gymId))
-		.map(gym => gym.gym)
-		.sort((gymA, gymB) => gymA.gymName.localeCompare(gymB.gymName))
-		.map(gym => `${gym.gymName.replace(/"/g, '\'')}\t${gym.gymInfo.latitude}\t${gym.gymInfo.longitude}`)
-		.join('\n');
-
-	fs.writeFileSync(`${region}.tsv`, tsv);
+	if (inPark) {
+		parkGyms.push(gym.id);
+	}
 });
 
 const regionGraph = Object.create(null);
@@ -63,9 +74,10 @@ const regionGraph = Object.create(null);
 mapRegions.forEach(region => {
 	regionGraph[region.name] = mapRegions
 		.filter(otherRegion => otherRegion.name !== region.name)
-		.filter(otherRegion => turfIntersect(region.geometry, otherRegion.geometry) !== null)
+		.filter(otherRegion => turf.intersect(region.geometry, otherRegion.geometry) !== null)
 		.map(otherRegion => otherRegion.name);
 });
 
 fs.writeFileSync('region-map.json', JSON.stringify(regionMap, null, 2));
 fs.writeFileSync('region-graph.json', JSON.stringify(regionGraph, null, 2));
+fs.writeFileSync('park-gyms.json', JSON.stringify(parkGyms, null, 2));
