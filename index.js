@@ -2,6 +2,7 @@
 
 const ToGeoJSON = require('togeojson-with-extended-style'),
 	fs = require('fs'),
+	he = require('he'),
 	turf = require('@turf/turf'),
 	DOMParser = require('xmldom').DOMParser,
 
@@ -14,6 +15,8 @@ const ToGeoJSON = require('togeojson-with-extended-style'),
 	parksKml = new DOMParser().parseFromString(fs.readFileSync(parks, 'utf8')),
 	rawParkRegions = ToGeoJSON.kml(parksKml).features
 		.filter(feature => feature.geometry.type === 'Polygon'),
+
+	gymMetadata = require('PgP-Data/data/gyms-metadata'),
 
 	regionMap = Object.create(null),
 	parkGyms = [];
@@ -42,15 +45,20 @@ const mapRegions = rawMapRegions
 	gyms = require('PgP-Data/data/gyms')
 		.map(gym => Object.create({
 			id: gym.gymId,
-			gym: gym,
+			gym: Object.assign({}, gym, gymMetadata[gym.gymId]),
 			point: turf.point([gym.gymInfo.longitude, gym.gymInfo.latitude])
 		}));
+
+let gymsList = 'Gym Name\tLongitude\tLatitude\n',
+	parksList = 'Gym Name\tLongitude\tLatitude\n',
+	exList = 'Gym Name\tLongitude\tLatitude\n';
 
 gyms.forEach(gym => {
 	const matchingRegions = mapRegions
 			.filter(region => turf.inside(gym.point, region.geometry)),
 		inPark = parkRegions
-			.some(region => turf.inside(gym.point, region));
+			.some(region => turf.inside(gym.point, region)),
+		hostedEx = gym.gym.is_ex;
 
 	let regionGyms;
 	matchingRegions.forEach(matchingRegion => {
@@ -64,8 +72,20 @@ gyms.forEach(gym => {
 		regionGyms.push(gym.id);
 	});
 
-	if (inPark) {
+	if (hostedEx && matchingRegions.length > 0) {
+		exList += `${he.decode(gym.gym.gymName.trim()).replace('"', '\'')}\t${gym.gym.gymInfo.longitude}\t${gym.gym.gymInfo.latitude}\n`;
+	}
+
+	if (inPark && matchingRegions.length > 0) {
 		parkGyms.push(gym.id);
+
+		if (!hostedEx) {
+			parksList += `${he.decode(gym.gym.gymName.trim()).replace('"', '\'')}\t${gym.gym.gymInfo.longitude}\t${gym.gym.gymInfo.latitude}\n`;
+		}
+	}
+
+	if (!hostedEx && !inPark && matchingRegions.length > 0) {
+		gymsList += `${he.decode(gym.gym.gymName.trim()).replace('"', '\'')}\t${gym.gym.gymInfo.longitude}\t${gym.gym.gymInfo.latitude}\n`;
 	}
 });
 
@@ -81,3 +101,7 @@ mapRegions.forEach(region => {
 fs.writeFileSync('region-map.json', JSON.stringify(regionMap, null, 2));
 fs.writeFileSync('region-graph.json', JSON.stringify(regionGraph, null, 2));
 fs.writeFileSync('park-gyms.json', JSON.stringify(parkGyms, null, 2));
+
+fs.writeFileSync('standard-gyms.tsv', gymsList);
+fs.writeFileSync('park-gyms.tsv', parksList);
+fs.writeFileSync('ex-gyms.tsv', exList);

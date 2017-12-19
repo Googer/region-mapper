@@ -4,7 +4,7 @@
   "description": "Pokemon Go Pittsburgh gym region mapper",
   "main": "index.js",
   "dependencies": {
-    "@turf/turf": "^5.0.4",
+    "@turf/turf": "^5.1.6",
     "PgP-Data": "github:Googer/PgP-Data",
     "he": "^1.1.1",
     "togeojson-with-extended-style": "^0.13.1",

@@ -9,3 +9,7 @@ package-lock.json
 park-gyms.json
 region-graph.json
 region-map.json
+
+ex-gyms.tsv
+park-gyms.tsv
+standard-gyms.tsv
