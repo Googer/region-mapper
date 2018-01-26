@@ -3,6 +3,7 @@
 const ToGeoJSON = require('togeojson-with-extended-style'),
 	fs = require('fs'),
 	he = require('he'),
+	S2 = require('s2-geometry').S2,
 	turf = require('@turf/turf'),
 	DOMParser = require('xmldom').DOMParser,
 
@@ -56,8 +57,13 @@ let gymsList = 'Gym Name\tLongitude\tLatitude\n',
 gyms.forEach(gym => {
 	const matchingRegions = mapRegions
 			.filter(region => turf.inside(gym.point, region.geometry)),
+		s2Cell = S2.S2Cell.FromLatLng({lat: gym.point.geometry.coordinates[1], lng: gym.point.geometry.coordinates[0]}, 20),
+		s2Coords = s2Cell.getCornerLatLngs(),
+		gymPolygon = turf.polygon(
+			[[...s2Coords
+				.map(latLng => [latLng.lng, latLng.lat]), [s2Coords[0].lng, s2Coords[0].lat]].reverse()]),
 		inPark = parkRegions
-			.some(region => turf.inside(gym.point, region)),
+			.some(region => turf.inside(gym.point, region) || turf.booleanOverlap(region, gymPolygon.geometry)),
 		hostedEx = gym.gym.is_ex;
 
 	let regionGyms;
