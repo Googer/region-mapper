@@ -59,11 +59,10 @@ gyms.forEach(gym => {
 			.filter(region => turf.inside(gym.point, region.geometry)),
 		s2Cell = S2.S2Cell.FromLatLng({lat: gym.point.geometry.coordinates[1], lng: gym.point.geometry.coordinates[0]}, 20),
 		s2Coords = s2Cell.getCornerLatLngs(),
-		gymPolygon = turf.polygon(
-			[[...s2Coords
-				.map(latLng => [latLng.lng, latLng.lat]), [s2Coords[0].lng, s2Coords[0].lat]].reverse()]),
+		s2Center = turf.center(turf.featureCollection(s2Coords
+      .map(latLng => turf.point([latLng.lng, latLng.lat])))),
 		inPark = parkRegions
-			.some(region => turf.inside(gym.point, region) || turf.booleanOverlap(region, gymPolygon.geometry)),
+			.some(region => turf.inside(s2Center, region)),
 		hostedEx = gym.gym.is_ex;
 
 	let regionGyms;
