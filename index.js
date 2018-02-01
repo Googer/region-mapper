@@ -60,7 +60,7 @@ gyms.forEach(gym => {
 		s2Cell = S2.S2Cell.FromLatLng({lat: gym.point.geometry.coordinates[1], lng: gym.point.geometry.coordinates[0]}, 20),
 		s2Coords = s2Cell.getCornerLatLngs(),
 		s2Center = turf.center(turf.featureCollection(s2Coords
-      .map(latLng => turf.point([latLng.lng, latLng.lat])))),
+			.map(latLng => turf.point([latLng.lng, latLng.lat])))),
 		inPark = parkRegions
 			.some(region => turf.inside(s2Center, region)),
 		hostedEx = gym.gym.is_ex;
@@ -78,19 +78,19 @@ gyms.forEach(gym => {
 	});
 
 	if (hostedEx && matchingRegions.length > 0) {
-		exList += `${he.decode(gym.gym.gymName.trim()).replace('"', '\'')}\t${gym.gym.gymInfo.longitude}\t${gym.gym.gymInfo.latitude}\n`;
+		exList += `${he.decode(gym.gym.gymName.trim()).replace(/"/g, '\'')}\t${gym.gym.gymInfo.longitude}\t${gym.gym.gymInfo.latitude}\n`;
 	}
 
 	if (inPark && matchingRegions.length > 0) {
 		parkGyms.push(gym.id);
 
 		if (!hostedEx) {
-			parksList += `${he.decode(gym.gym.gymName.trim()).replace('"', '\'')}\t${gym.gym.gymInfo.longitude}\t${gym.gym.gymInfo.latitude}\n`;
+			parksList += `${he.decode(gym.gym.gymName.trim()).replace(/"/g, '\'')}\t${gym.gym.gymInfo.longitude}\t${gym.gym.gymInfo.latitude}\n`;
 		}
 	}
 
 	if (!hostedEx && !inPark && matchingRegions.length > 0) {
-		gymsList += `${he.decode(gym.gym.gymName.trim()).replace('"', '\'')}\t${gym.gym.gymInfo.longitude}\t${gym.gym.gymInfo.latitude}\n`;
+		gymsList += `${he.decode(gym.gym.gymName.trim()).replace(/"/g, '\'')}\t${gym.gym.gymInfo.longitude}\t${gym.gym.gymInfo.latitude}\n`;
 	}
 });
 
