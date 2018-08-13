@@ -12,7 +12,7 @@ const ToGeoJSON = require('togeojson-with-extended-style'),
 	rawMapRegions = ToGeoJSON.kml(mapKml).features
 		.filter(feature => feature.geometry.type === 'Polygon'),
 
-	parks = require.resolve('PgP-data/data/parks.kml'),
+	parks = require.resolve('PgP-Data/data/parks.kml'),
 	parksKml = new DOMParser().parseFromString(fs.readFileSync(parks, 'utf8')),
 	rawParkRegions = ToGeoJSON.kml(parksKml).features
 		.filter(feature => feature.geometry.type === 'Polygon'),
