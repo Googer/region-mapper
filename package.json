@@ -6,8 +6,8 @@
   "dependencies": {
     "@turf/turf": "^5.1.6",
     "PgP-Data": "github:Googer/PgP-Data",
-    "he": "^1.1.1",
-    "s2-geometry": "^1.2.9",
+    "he": "^1.2.0",
+    "s2-geometry": "^1.2.10",
     "togeojson-with-extended-style": "^0.13.1",
     "xmldom": "^0.1.27"
   },

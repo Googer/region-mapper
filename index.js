@@ -18,9 +18,28 @@ const ToGeoJSON = require('togeojson-with-extended-style'),
 		.filter(feature => feature.geometry.type === 'Polygon'),
 
 	gymMetadata = require('PgP-Data/data/gyms-metadata'),
-
 	regionMap = Object.create(null),
 	parkGyms = [];
+
+let blockingRegions;
+
+try {
+	const blockingFeatures = require.resolve('PgP-data/data/blocking-features.kml'),
+		blockingFeaturessKml = new DOMParser().parseFromString(fs.readFileSync(blockingFeatures, 'utf8')),
+		rawBlockingFeatureRegions = ToGeoJSON.kml(blockingFeaturessKml).features
+			.filter(feature => feature.geometry.type === 'Polygon');
+
+	rawBlockingFeatureRegions
+		.forEach(region => region.geometry.coordinates
+			.forEach(coords => coords.reverse())
+		);
+
+	blockingRegions = rawBlockingFeatureRegions
+		.map(region => region.geometry);
+} catch (err) {
+	blockingRegions = [];
+}
+
 
 // flip order of coordinates so they're in the right order according to what turf expects
 rawMapRegions
@@ -32,6 +51,7 @@ rawParkRegions
 	.forEach(region => region.geometry.coordinates
 		.forEach(coords => coords.reverse())
 	);
+
 
 const mapRegions = rawMapRegions
 		.map(region => Object.create({
@@ -52,7 +72,8 @@ const mapRegions = rawMapRegions
 
 let gymsList = 'Gym Name\tLongitude\tLatitude\n',
 	parksList = 'Gym Name\tLongitude\tLatitude\n',
-	exList = 'Gym Name\tLongitude\tLatitude\n';
+	exList = 'Gym Name\tLongitude\tLatitude\n',
+	outsideList = 'Gym Name\tLongitude\tLatitude\n';
 
 gyms.forEach(gym => {
 	const matchingRegions = mapRegions
@@ -62,6 +83,8 @@ gyms.forEach(gym => {
 		s2Center = turf.center(turf.featureCollection(s2Coords
 			.map(latLng => turf.point([latLng.lng, latLng.lat])))),
 		inPark = parkRegions
+			.some(region => turf.inside(s2Center, region)),
+		inBlocking = blockingRegions
 			.some(region => turf.inside(s2Center, region)),
 		hostedEx = gym.gym.is_ex;
 
@@ -81,7 +104,7 @@ gyms.forEach(gym => {
 		exList += `${he.decode(gym.gym.gymName.trim()).replace(/"/g, '\'')}\t${gym.gym.gymInfo.longitude}\t${gym.gym.gymInfo.latitude}\n`;
 	}
 
-	if (inPark && matchingRegions.length > 0) {
+	if (inPark && !inBlocking && matchingRegions.length > 0) {
 		parkGyms.push(gym.id);
 
 		if (!hostedEx) {
@@ -91,6 +114,10 @@ gyms.forEach(gym => {
 
 	if (!hostedEx && !inPark && matchingRegions.length > 0) {
 		gymsList += `${he.decode(gym.gym.gymName.trim()).replace(/"/g, '\'')}\t${gym.gym.gymInfo.longitude}\t${gym.gym.gymInfo.latitude}\n`;
+	}
+
+	if (matchingRegions.length === 0) {
+		outsideList += `${he.decode(gym.gym.gymName.trim()).replace(/"/g, '\'')}\t${gym.gym.gymInfo.longitude}\t${gym.gym.gymInfo.latitude}\n`;
 	}
 });
 
@@ -110,3 +137,4 @@ fs.writeFileSync('park-gyms.json', JSON.stringify(parkGyms, null, 2));
 fs.writeFileSync('standard-gyms.tsv', gymsList);
 fs.writeFileSync('park-gyms.tsv', parksList);
 fs.writeFileSync('ex-gyms.tsv', exList);
+fs.writeFileSync('outside-gyms.tsv', outsideList);
