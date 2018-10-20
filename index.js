@@ -70,7 +70,7 @@ const mapRegions = rawMapRegions
 			point: turf.point([gym.gymInfo.longitude, gym.gymInfo.latitude])
 		}));
 
-let gymsList = 'Gym  Name\tLongitude\tLatitude\n',
+let gymsList = 'Gym Name\tLongitude\tLatitude\n',
 	parksList = 'Gym Name\tLongitude\tLatitude\n',
 	exList = 'Gym Name\tLongitude\tLatitude\n',
 	outsideList = 'Gym Name\tLongitude\tLatitude\n';
@@ -111,7 +111,7 @@ gyms.forEach(gym => {
 		}
 	}
 
-	if (!hostedEx && !inPark && matchingRegions.length > 0) {
+	if (!hostedEx && (!inPark || inBlocking)  && matchingRegions.length > 0) {
 		gymsList += `${he.decode(gym.gym.gymName.trim()).replace(/"/g, '\'')}\t${gym.gym.gymInfo.longitude}\t${gym.gym.gymInfo.latitude}\n`;
 	}
 
