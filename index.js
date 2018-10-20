@@ -70,7 +70,7 @@ const mapRegions = rawMapRegions
 			point: turf.point([gym.gymInfo.longitude, gym.gymInfo.latitude])
 		}));
 
-let gymsList = 'Gym Name\tLongitude\tLatitude\n',
+let gymsList = 'Gym  Name\tLongitude\tLatitude\n',
 	parksList = 'Gym Name\tLongitude\tLatitude\n',
 	exList = 'Gym Name\tLongitude\tLatitude\n',
 	outsideList = 'Gym Name\tLongitude\tLatitude\n';
@@ -79,13 +79,12 @@ gyms.forEach(gym => {
 	const matchingRegions = mapRegions
 			.filter(region => turf.inside(gym.point, region.geometry)),
 		s2Cell = S2.S2Cell.FromLatLng({lat: gym.point.geometry.coordinates[1], lng: gym.point.geometry.coordinates[0]}, 20),
-		s2Coords = s2Cell.getCornerLatLngs(),
-		s2Center = turf.center(turf.featureCollection(s2Coords
-			.map(latLng => turf.point([latLng.lng, latLng.lat])))),
+		s2Center = s2Cell.getLatLng(),
+		s2CenterPoint = turf.point([s2Center.lng, s2Center.lat]),
 		inPark = parkRegions
-			.some(region => turf.inside(s2Center, region)),
+			.some(region => turf.inside(s2CenterPoint, region)),
 		inBlocking = blockingRegions
-			.some(region => turf.inside(s2Center, region)),
+			.some(region => turf.inside(s2CenterPoint, region)),
 		hostedEx = gym.gym.is_ex;
 
 	let regionGyms;
