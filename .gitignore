@@ -6,10 +6,11 @@ package-lock.json
 .idea/workspace.xml
 
 # ignore output files
-park-gyms.json
 region-graph.json
 region-map.json
 
 ex-gyms.tsv
-park-gyms.tsv
+tagged-gyms.tsv
 standard-gyms.tsv
+
+gym-counts.txt
